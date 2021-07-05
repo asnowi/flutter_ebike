@@ -1,0 +1,155 @@
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.3"
+    useLibrary 'org.apache.http.legacy'
+
+    // Gradle Plugin 4.0 及以上
+    buildFeatures {
+        dataBinding = true
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        applicationId "com.maple.flutter_ebike"
+        minSdkVersion 21
+        targetSdkVersion 29
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+
+        multiDexEnabled true
+    }
+
+    // 开启 Java 8 支持
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+        /**
+         * Java源文件编码。
+         */
+        encoding "UTF-8"
+        incremental true
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs'
+        }
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file(keystoreProperties.RELEASE_STOREFILE)
+            storePassword keystoreProperties.RELEASE_STORE_PASSWORD
+            keyAlias keystoreProperties.RELEASE_KEY_ALIAS
+            keyPassword keystoreProperties.RELEASE_KEY_PASSWORD
+        }
+
+        release {
+            storeFile file(keystoreProperties.RELEASE_STOREFILE)
+            storePassword keystoreProperties.RELEASE_STORE_PASSWORD
+            keyAlias keystoreProperties.RELEASE_KEY_ALIAS
+            keyPassword keystoreProperties.RELEASE_KEY_PASSWORD
+        }
+    }
+
+
+    buildTypes {
+
+        debug {
+            debuggable true
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+        }
+
+        release {
+            debuggable false
+            //移除无用的资源文件
+            shrinkResources true
+            zipAlignEnabled true
+            minifyEnabled true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    android.applicationVariants.all {
+        variant ->
+            variant.outputs.all {
+                def fileName = "app_V1.0.0_default.apk"
+                def date = new Date()
+                def formattedDate = date.format('yyyyMMdd')
+                if (variant.buildType.name.equals('release')) {
+                    fileName = "app_V${variant.mergedFlavor.versionName}_release_${formattedDate}.apk"
+                } else if (variant.buildType.name.equals('debug')) {
+                    fileName = "app_V${variant.mergedFlavor.versionName}_debug_${formattedDate}.apk"
+                }
+                outputFileName = fileName
+            }
+    }
+
+    //添加如下配置就ok了
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    dexOptions {
+        javaMaxHeapSize "4g"
+        jumboMode = true
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+}
