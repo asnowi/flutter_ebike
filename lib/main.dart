@@ -47,7 +47,6 @@ class MyApp extends StatelessWidget {
               getPages: AppPages.routes,
               // 启动页面
               initialRoute: AppPages.INITIAL,
-              // 启动页面
           )
       ),
     );

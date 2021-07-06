@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_ebike/common/config/config.dart';
+import 'package:flutter_ebike/common/db/db.dart';
 import 'package:flutter_ebike/common/utils/utils.dart';
 import 'package:package_info/package_info.dart';
 
@@ -25,6 +26,11 @@ class Global{
   static late IosDeviceInfo iosDeviceInfo;
   /// 包信息
   static late PackageInfo packageInfo;
+
+  /// 持久化数据
+  static DBUtil? dbUtil;
+  /// 用户信息
+  static User? userInfo;
 
   /// init
   static Future init() async{
@@ -59,5 +65,10 @@ class Global{
     await StorageUtil().init();
     // 读取设备第一次打开
     hasFirst = StorageUtil().getBool(SaveInfoKey.HAS_FIRST)?? false;
+
+    // hive
+    await DBUtil.install();
+    dbUtil = await DBUtil.getInstance();
+    userInfo = dbUtil?.getUser();
   }
 }
